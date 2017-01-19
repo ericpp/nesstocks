@@ -9,6 +9,122 @@ class WalmartChecker {
 		$this->http = $http ?: new HttpClient();
 	}
 
+	public function getStoreInfo($storeId) {
+		$headers = array(
+			"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+			"Accept-encoding: gzip, deflate, sdch, br",
+			"Accept-language: en-US,en;q=0.8",
+		);
+
+		$result = $this->http->get('https://www.walmart.com/store/' . $storeId, $headers);
+
+		if ($this->http->lastHttpCode != 200) {
+			return array();
+		}
+
+		if (!preg_match('/store: ({.+?}),[\r\n]/s', $result, $json)) {
+			throw new \Exception("Unable to parse store JSON: " . $result);
+		}
+
+		$json = json_decode($json[1], true);
+
+		return array(
+			'id'      => $json['id'],
+			'zip'     => $json['address']['postalCode'],
+			'address' => $json['address']['address1'],
+			'city'    => $json['address']['city'],
+			'state'   => $json['address']['state'],
+			'phone'   => isset($json['phone']) ? $json['phone'] : null,
+			'store'   => $json['storeType']['displayName'],
+		);
+	}
+
+	public function getProductId($sku) {
+		$headers = array(
+			"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+			"Accept-encoding: gzip, deflate, sdch, br",
+			"Accept-language: en-US,en;q=0.8",
+		);
+
+		$result = $this->http->get('https://www.walmart.com/ip/' . $sku, $headers);
+
+		if (!preg_match('/"product":"([^"]+)"/s', $result, $product)) {
+			throw new \Exception("Unable to parse product ID: " . $result);
+		}
+
+		return $product[1];
+	}
+
+	public function getInventoryByZip($zip, $productID) {
+		$data = $this->http->get('https://www.walmart.com/terra-firma/item/' . $productID . '/location/' . $zip . '?selected=true&wl13=');
+		$result = json_decode($data, true);
+
+		if (!$result) {
+			throw new \Exception("Unable to parse response: " . $data);
+		}
+
+		if (!isset($result['payload'])) {
+			return array(); // no stores
+		}
+
+		$stores = array();
+
+		foreach ($result['payload']['offers'] as $offer) {
+			if (!$offer['fulfillment']['pickupable']) {
+				continue; // online/third party only
+			}
+
+			foreach ($offer['fulfillment']['pickupOptions'] as $option) {
+				$stores[] = $option;
+			}
+		}
+
+		return $stores;
+	}
+
+	public function check($zip) {
+		// get all stores by zip code
+		$stores = $this->getInventoryByZip($zip, $this->config['productId']);
+		$stocks = array();
+
+		// loop through each store and get inventory
+		foreach ($stores as $loc) {
+			$avail = 'Out of Stock';
+			$quantity = 0;
+			$info = array();
+
+			if ($loc['availability'] != 'NOT_AVAILABLE') {
+				$avail = $loc['availability'];
+				$quantity = $loc['urgentQuantity']; // actual quantity?
+				$info = $this->getStoreInfo($loc['storeId']);
+			}
+
+			$stock = array(
+				'id' => $loc['storeId'],
+				'zip' => null,
+				'avail' => $avail,
+				'address' => $loc['storeAddress'],
+				'city' => null,
+				'state' => null,
+				'location' => $loc['storeAddress'],
+				'phone' => null,
+				'store' => $loc['storeName'],
+				'onhand_quantity' => null,
+				'threshold_quantity' => null,
+				'saleable_quantity' => $quantity,
+			);
+
+			if ($info) {
+				$stock = array_merge($stock, $info);
+			}
+
+			$stocks[] = $stock;
+		}
+
+		return $stocks;
+	}
+
+
 	public function getStoresByZip($zip) {
 		$data = $this->http->get('https://www.walmart.com/store/ajax/detail-navigation?location='. $zip);
 		$result = json_decode($data, true);
@@ -24,9 +140,9 @@ class WalmartChecker {
 		return $result['payload']['stores'];
 	}
 
-	public function getStoreInventory($storeId, $deptId, $sku) {
+	public function searchStore($storeId, $deptId, $query) {
 		$params = array(
-			'searchQuery' => 'store=' . $storeId . '&size=24&dept=' . $deptId . '&query=' . $sku,
+			'searchQuery' => 'store=' . $storeId . '&size=24&dept=' . $deptId . '&query=' . $query
 		);
 
 		$search = $this->http->post_params('https://www.walmart.com/store/ajax/search', $params);
@@ -38,42 +154,5 @@ class WalmartChecker {
 		}
 
 		return $sresult['results'];
-	}
-
-	public function check($zip) {
-		// get all stores by zip code
-		$stores = $this->getStoresByZip($zip);
-		$stocks = array();
-
-		// loop through each store and get inventory
-		foreach ($stores as $loc) {
-			$avail = 'Out of Stock';
-			$quantity = 0;
-
-			// get store inventory by store id
-			$inventory = $this->getStoreInventory($loc['id'], $this->config['deptId'], $this->config['sku']);
-
-			if (count($inventory) > 0) {
-				$avail = $inventory[0]['inventory']['status'];
-				$quantity = $inventory[0]['inventory']['quantity'];
-			}
-
-			$stocks[] = array(
-				'id' => $loc['address']['postalCode'],
-				'zip' => $loc['address']['postalCode'],
-				'avail' => $avail,
-				'address' => $loc['address']['address1'],
-				'city' => $loc['address']['city'],
-				'state' => $loc['address']['state'],
-				'location' => $loc['address']['address1'],
-				'phone' => $loc['phone'],
-				'store' => $loc['storeType']['displayName'],
-				'onhand_quantity' => null,
-				'threshold_quantity' => null,
-				'saleable_quantity' => $quantity,
-			);
-		}
-
-		return $stocks;
 	}
 }

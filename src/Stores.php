@@ -12,7 +12,7 @@ class Stores {
 
 		return array_map(function ($store) {
 			$item = explode(' | ', $store);
-			return array($item[2], $item[3]);
+			return array($item[5], $item[0], $item[1]);
 		}, $stores);
 	}
 }

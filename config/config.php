@@ -13,6 +13,7 @@ return [
 			'checker' => 'WalmartChecker',
 			'sku'     => '54043501',
 			'deptId'  => '2636',
+			'productId' => '5VRQ98YB00LF',
 		],
 		/*
 		'BestBuy' => [

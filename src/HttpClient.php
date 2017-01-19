@@ -6,6 +6,7 @@ class HttpClient {
 	public $debug = false;
 	public $cookies = false;
 	public $cookiejar = null;
+	public $lastHttpCode = null;
 
 	function __construct($debug = false) {
 		$this->debug = $debug;
@@ -58,6 +59,9 @@ class HttpClient {
 		if (stripos($header, 'Content-Encoding: gzip') !== false) {
 			$body = gzdecode($body);
 		}
+
+		// get the http result code
+		$this->lastHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 		//close connection
 		curl_close($ch);

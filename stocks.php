@@ -50,11 +50,17 @@ $stores = new Stores($input_file);
 
 // loop through all retailer zipcodes
 foreach ($stores->get() as $zip_retailer) {
-	list($zipcode, $retailer) = $zip_retailer;
+	list($retailer, $zipcode, $storeid) = $zip_retailer;
 
 	print "=== " . $retailer . " " . $zipcode . " ===\n";
 
-	// skip if already checked
+	// skip if storeid already checked
+	if (isset($used_ids[$retailer]) && isset($used_ids[$retailer][$storeid])) {
+		print "already searched store id: " . $storeid . "\n";
+		continue;
+	}
+
+	// skip if zipcode already checked
 	if (isset($used_zips[$retailer]) && isset($used_zips[$retailer][$zipcode])) {
 		print "already searched zip: " . $zipcode . "\n";
 		continue;
@@ -105,7 +111,7 @@ foreach ($stores->get() as $zip_retailer) {
 		}
 
 		// print availability
-		print $line;
+		print $item['id'] . ' | ' . $line;
 
 		// save to avails file if available
 		if (!isset($used_ids[$retailer][$item['id']]) && !isset($used_zips[$retailer][$item['zip']]) && $item['avail'] != 'Out of Stock' && $item['avail'] != 'Not sold in this store') {
@@ -115,10 +121,12 @@ foreach ($stores->get() as $zip_retailer) {
 		// save to stocks file
 		file_put_contents($stocks_file, $zipcode . ' | ' . $item['id'] . ' | ' . $line, FILE_APPEND);
 
-		// mark the store's id and zip as checked
+		// mark the returned store's id as checked
 		$used_ids[$retailer][$item['id']] = $item['id'];
-		$used_zips[$retailer][$item['zip']] = $item['zip'];
 	}
+
+	// mark the search id as checked
+	$used_ids[$retailer][$storeid] = $storeid;
 
 	// mark the search zip code as checked
 	$used_zips[$retailer][$zipcode] = $zipcode;
