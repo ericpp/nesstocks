@@ -26,10 +26,11 @@ class HttpClient {
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_HEADER, true);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
 		if ($this->cookies) {
 			if (!$this->cookiejar) {
-				$this->cookiejar = tempnam('/tmp', 'stocks');
+				$this->cookiejar = tempnam(sys_get_temp_dir(), 'stocks');
 			}
 
 			curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookiejar);
