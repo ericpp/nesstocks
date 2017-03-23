@@ -74,7 +74,15 @@ class WalmartChecker {
 				continue; // online/third party only
 			}
 
+			$price = null;
+
+			if (isset($offer['pricesInfo']['priceMap']['CURRENT'])) {
+				$price = $offer['pricesInfo']['priceMap']['CURRENT']['currencyUnitSymbol'];
+				$price .= $offer['pricesInfo']['priceMap']['CURRENT']['price'];
+			}
+
 			foreach ($offer['fulfillment']['pickupOptions'] as $option) {
+				$option['price'] = $price;
 				$stores[] = $option;
 			}
 		}

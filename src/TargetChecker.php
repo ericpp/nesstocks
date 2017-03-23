@@ -37,6 +37,18 @@ class TargetChecker {
 		return $this->accessKey;
 	}
 
+	function getStorePrice($storeId) {
+		$url = 'http://redsky.target.com/v2/pdp/dpci/' . $this->config['sku'] . '?storeId=' . $storeId;
+		$response = $this->http->get($url);
+		$result = json_decode($response, true);
+
+		if (isset($result['product']['price']['offerPrice'])) {
+			return $result['product']['price']['offerPrice']['formattedPrice'];
+		}
+
+		return null;
+	}
+
 	function check($zip) {
 		$url = 'http://api.target.com/products/v3/saleable_quantity_by_location?key=' . $this->getAccessKey();
 		$data = json_encode(array(
@@ -67,6 +79,12 @@ class TargetChecker {
 			$fmt = explode(', ', $item['formatted_store_address']);
 			$len = count($fmt);
 
+			$price = null;
+
+			if ($item['onhand_quantity'] > 0) {
+				$price = $this->getStorePrice($item['store_id']);
+			}
+
 			$stores[] = array(
 				'id' => $item['store_id'],
 				'zip' => $this->parser->parse_zip($fmt[$len-1]),
@@ -80,6 +98,7 @@ class TargetChecker {
 				'onhand_quantity' => $item['onhand_quantity'],
 				// 'threshold_quantity' => $item['threshold_quantity'],
 				'saleable_quantity' => $item['saleable_quantity'],
+				'price' => $price,
 			);
 		}
 

@@ -94,6 +94,7 @@ foreach ($stores->get() as $zip_retailer) {
 			$item['avail'],
 			$item['onhand_quantity'],
 			$item['saleable_quantity'],
+			$item['price'],
 		)) . "\n";
 
 		// already checked this store's id
