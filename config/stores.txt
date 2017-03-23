@@ -7144,3 +7144,6 @@
 60436 | 8298 | IL | Joliet | 60436 | Walmart | 321 S Larkin Ave | (815) 744-2525 |  |  | 
 75075 | 8299 | TX | Plano | 75075 | Walmart | 301 Coit Rd | (972) 612-8041 |  |  | 
 72712 | 8763 | AR | Bentonville | 72712 | Walmart | 608 Sw 8Th St |  |  |  | 
+20619 | 1258 | MD | California | 20619-2416 | Target | 45155 First Colony Way | (301) 862-5003 |  |  | 
+92307 | 2260 | CA | Apple Valley | 92307-2937 | Target | 20288 US Highway 18 | (760) 240-7654 |  |  | 
+93405 | 2759 | CA | San Luis Obispo | 93405 | Target | 11990 LOS OSOS VALLEY RD | (805) 858-9902 |  |  | 

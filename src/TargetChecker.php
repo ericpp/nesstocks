@@ -37,6 +37,51 @@ class TargetChecker {
 		return $this->accessKey;
 	}
 
+	public function getStoresByZip($zip) {
+		$url = 'https://api.target.com/v2/store/?key=' . $this->getAccessKey() . '&limit=20&nearby=' . $zip;
+		$headers = array(
+			'Accept: application/json',
+		);
+
+		$data = $this->http->get($url, $headers);
+		$json = json_decode($data, true);
+
+		if (isset($json['Error'])) {
+			throw new \Exception($json['Error']['Message'] . ': ' . $json['Error']['Detail']);
+		}
+
+		if (isset($json['Locations']) && $json['Locations']['@count'] == 0) {
+			return array();
+		}
+
+		$stores = array();
+
+
+		foreach ($json['Locations']['Location'] as $loc) {
+			$phone = null;
+
+			if (isset($loc['TelephoneNumber']['PhoneNumber'])) {
+				$phone = $loc['TelephoneNumber']['PhoneNumber'];
+			}
+
+			if (isset($loc['TelephoneNumber'][0]['PhoneNumber'])) {
+				$phone = $loc['TelephoneNumber'][0]['PhoneNumber'];
+			}
+
+			$stores[] = array(
+				'id'      => $loc['ID'],
+				'zip'     => $loc['Address']['PostalCode'],
+				'address' => $loc['Address']['AddressLine1'],
+				'city'    => $loc['Address']['City'],
+				'state'   => $loc['Address']['Subdivision'],
+				'phone'   => $phone,
+				'store'   => $loc['Name'],
+			);
+		}
+
+		return $stores;
+	}
+
 	function getStorePrice($storeId) {
 		$url = 'http://redsky.target.com/v2/pdp/dpci/' . $this->config['sku'] . '?storeId=' . $storeId;
 		$response = $this->http->get($url);
