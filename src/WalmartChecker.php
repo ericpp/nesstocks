@@ -120,6 +120,7 @@ class WalmartChecker {
 				'onhand_quantity' => null,
 				'threshold_quantity' => null,
 				'saleable_quantity' => $quantity,
+				'price' => $loc['price'],
 			);
 
 			if ($info) {
