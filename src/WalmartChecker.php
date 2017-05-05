@@ -22,20 +22,26 @@ class WalmartChecker {
 			return array();
 		}
 
-		if (!preg_match('/store: ({.+?}),[\r\n]/s', $result, $json)) {
+		if (!preg_match('/window.__WML_REDUX_INITIAL_STATE__\s?=\s?(.+?);<\//', $result, $json)) {
 			throw new \Exception("Unable to parse store JSON: " . $result);
 		}
 
 		$json = json_decode($json[1], true);
 
+		if (!isset($json) || !isset($json['store'])) {
+			throw new \Exception("Unable to decode store JSON: " . $result);
+		}
+
+		$store = $json['store'];
+
 		return array(
-			'id'      => $json['id'],
-			'zip'     => $json['address']['postalCode'],
-			'address' => $json['address']['address1'],
-			'city'    => $json['address']['city'],
-			'state'   => $json['address']['state'],
-			'phone'   => isset($json['phone']) ? $json['phone'] : null,
-			'store'   => $json['storeType']['displayName'],
+			'id'      => $store['id'],
+			'zip'     => $store['address']['postalCode'],
+			'address' => $store['address']['address1'],
+			'city'    => $store['address']['city'],
+			'state'   => $store['address']['state'],
+			'phone'   => isset($store['phone']) ? $store['phone'] : null,
+			'store'   => $store['storeType']['displayName'],
 		);
 	}
 
