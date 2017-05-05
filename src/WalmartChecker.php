@@ -7,6 +7,14 @@ class WalmartChecker {
 	public function __construct($config, $http = null) {
 		$this->config = $config;
 		$this->http = $http ?: new HttpClient();
+
+		if (isset($config['productId'])) {
+			$this->productId = $config['productId'];
+		}
+
+		if (!isset($this->productId)) {
+			$this->productId = $this->getProductId($config['sku']);
+		}
 	}
 
 	public function getStoreInfo($storeId) {
@@ -48,7 +56,6 @@ class WalmartChecker {
 	public function getProductId($sku) {
 		$headers = array(
 			"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-			"Accept-encoding: gzip, deflate, sdch, br",
 			"Accept-language: en-US,en;q=0.8",
 		);
 
@@ -98,7 +105,7 @@ class WalmartChecker {
 
 	public function check($zip) {
 		// get all stores by zip code
-		$stores = $this->getInventoryByZip($zip, $this->config['productId']);
+		$stores = $this->getInventoryByZip($zip, $this->productId);
 		$stocks = array();
 
 		// loop through each store and get inventory
