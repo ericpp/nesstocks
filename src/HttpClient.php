@@ -56,7 +56,14 @@ class HttpClient {
 		//execute post
 		$result = curl_exec($ch);
 
-		list($header, $body) = explode("\r\n\r\n", $result, 2);
+		$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+
+		// curl can return multiple sets of headers if following a redirect
+		// save the last set of headers into $header
+		$header_sets = explode("\r\n\r\n", trim(substr($result, 0, $header_size)));
+		$header = array_pop($header_sets);
+
+		$body = substr($result, $header_size);
 
 		if (stripos($header, 'Content-Encoding: gzip') !== false) {
 			$body = gzdecode($body);
